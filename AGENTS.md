@@ -51,12 +51,12 @@ subprojects have distinct build systems even when their source lives here.
 6. Add or update focused tests beside the behavior being changed.
 7. Run checks proportional to the affected subsystem.
 8. Report exact commands, failures, skipped checks, and environment blockers.
+9. Never expose passwords, JWT secrets, API tokens, admin credentials, or `.env` contents in source, logs, tests, generated artifacts, or responses.
 
 Do not run repository-wide `pnpm lint:fix` by default. It can rewrite files
 outside the task. Lint or format only files in scope.
 
-Do not edit `node_modules` or generated `dist`/build/coverage/runtime output as
-source. Tracked tooling under `client/build` and `client/web/build` is source.
+Do not edit `node_modules` or generated `dist`/build/coverage/runtime output as source. Tracked tooling under `client/build` and `client/web/build` is source.
 
 ## Toolchains and package ownership
 
