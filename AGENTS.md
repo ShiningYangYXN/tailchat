@@ -55,8 +55,8 @@ subprojects have distinct build systems even when their source lives here.
 Do not run repository-wide `pnpm lint:fix` by default. It can rewrite files
 outside the task. Lint or format only files in scope.
 
-Do not edit `node_modules`, `dist`, `build`, coverage output, or generated
-runtime assets as source. Do not use a generated file to avoid fixing its owner.
+Do not edit `node_modules` or generated `dist`/build/coverage/runtime output as
+source. Tracked tooling under `client/build` and `client/web/build` is source.
 
 ## Toolchains and package ownership
 
