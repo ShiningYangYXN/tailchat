@@ -1,5 +1,12 @@
 
 
+## [1.11.12](https://github.com/msgbyte/tailchat/compare/v1.11.11...v1.11.12) (2026-07-20)
+
+
+### Bug Fixes
+
+* **docker:** upgrade traefik for api compatibility ([1e18775](https://github.com/msgbyte/tailchat/commit/1e18775111dee736da75c3bfd730687b4576cb26))
+
 ## [1.11.11](https://github.com/msgbyte/tailchat/compare/v1.11.10...v1.11.11) (2026-06-11)
 
 
