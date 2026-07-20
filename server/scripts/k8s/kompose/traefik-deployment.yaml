@@ -29,7 +29,7 @@ spec:
             - --api.insecure=true
             - --providers.docker=true
             - --providers.docker.exposedbydefault=false
-          image: traefik:v2.1
+          image: traefik:v3.7.8
           name: traefik
           ports:
             - containerPort: 80
