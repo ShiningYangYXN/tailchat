@@ -25,6 +25,11 @@ export const UserList: React.FC = React.memo(() => {
           label: 'Search',
         }),
       ]}
+      tableProps={{
+        scroll: {
+          x: 2200,
+        },
+      }}
       fields={userFields}
       action={{
         create: true,
