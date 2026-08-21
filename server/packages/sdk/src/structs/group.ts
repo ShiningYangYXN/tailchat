@@ -4,8 +4,51 @@ export enum GroupPanelType {
   PLUGIN = 2,
 }
 
-// TODO
-export type GroupPanelMeta = {};
+export const GROUP_PANEL_SLOW_MODE_INTERVALS = [
+  60, 300, 900, 1800, 3600,
+] as const;
+export const GROUP_PANEL_SLOW_MODE_MAX_MESSAGES = [1, 3, 5, 10] as const;
+
+export interface GroupPanelSlowMode {
+  /** 统计窗口，单位为秒 */
+  intervalSeconds: number;
+  /** 统计窗口内允许发送的消息数 */
+  maxMessages: number;
+}
+
+export interface GroupPanelMeta {
+  slowMode?: GroupPanelSlowMode;
+  [key: string]: any;
+}
+
+export function isGroupPanelSlowMode(
+  value: unknown
+): value is GroupPanelSlowMode {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const slowMode = value as GroupPanelSlowMode;
+  return (
+    (GROUP_PANEL_SLOW_MODE_INTERVALS as readonly number[]).indexOf(
+      slowMode.intervalSeconds
+    ) !== -1 &&
+    (GROUP_PANEL_SLOW_MODE_MAX_MESSAGES as readonly number[]).indexOf(
+      slowMode.maxMessages
+    ) !== -1
+  );
+}
+
+export function getGroupPanelSlowMode(
+  meta: unknown
+): GroupPanelSlowMode | undefined {
+  if (typeof meta !== 'object' || meta === null) {
+    return undefined;
+  }
+
+  const slowMode = (meta as GroupPanelMeta).slowMode;
+  return isGroupPanelSlowMode(slowMode) ? slowMode : undefined;
+}
 
 interface GroupMemberStruct {
   roles?: string[]; // 角色

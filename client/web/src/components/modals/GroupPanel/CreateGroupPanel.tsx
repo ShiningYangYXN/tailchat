@@ -32,7 +32,7 @@ export const ModalCreateGroupPanel: React.FC<{
   const { fields, schema } = useGroupPanelFields(props.groupId, currentValues);
 
   return (
-    <ModalWrapper title={t('创建群组面板')} style={{ maxWidth: 440 }}>
+    <ModalWrapper title={t('创建群组面板')} style={{ maxWidth: 560 }}>
       <WebMetaForm
         schema={schema}
         fields={fields}

@@ -132,6 +132,8 @@ export {
 export type { FriendRequest } from './model/friend';
 export {
   GroupPanelType,
+  GROUP_PANEL_SLOW_MODE_INTERVALS,
+  GROUP_PANEL_SLOW_MODE_MAX_MESSAGES,
   createGroup,
   createGroupInviteCode,
   getAllGroupInviteCode,
@@ -143,6 +145,8 @@ export {
   createGroupPanel,
   modifyGroupPanel,
   deleteGroupPanel,
+  getGroupPanelSlowMode,
+  isGroupPanelSlowMode,
   createGroupRole,
   deleteGroupRole,
   updateGroupRoleName,
@@ -156,6 +160,7 @@ export type {
   GroupInvite,
   GroupMember,
   GroupPanelFeature,
+  GroupPanelSlowMode,
 } from './model/group';
 export type {
   BasicInboxItem,
@@ -165,6 +170,7 @@ export type {
 } from './model/inbox';
 export {
   sendMessage,
+  getSlowModeStatus,
   recallMessage,
   deleteMessage,
   addReaction,
@@ -174,6 +180,7 @@ export type {
   ChatMessageReaction,
   ChatMessage,
   SendMessagePayloadMeta,
+  SlowModeStatus,
 } from './model/message';
 export type { PluginManifest } from './model/plugin';
 export type { UserBaseInfo, UserLoginInfo, UserSettings } from './model/user';

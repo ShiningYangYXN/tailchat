@@ -20,6 +20,31 @@ The primary runtime flow is:
 Do not bypass this flow by coupling core UI to plugin internals, accessing data
 around service actions, or relying on client-side authorization.
 
+## Distributed deployment assumptions
+
+Tailchat is deployed as a distributed system and may run multiple gateway and
+service instances. Treat this as a design constraint for every backend feature,
+even when local development uses a single process.
+
+- Do not keep correctness-critical shared state only in process memory. Store it
+  in MongoDB, Redis, or another configured shared service; local memory may be
+  used only as a disposable optimization.
+- Assume concurrent requests for the same user or resource can reach different
+  instances. Use database atomic operations, transactions, Redis Lua scripts,
+  locks, idempotency keys, or another appropriate distributed coordination
+  mechanism when correctness depends on ordering or exclusivity.
+- Do not rely on sticky sessions, a particular service instance, local timers,
+  or in-process event delivery for cross-request correctness.
+- Namespace shared keys by deployment and domain, set bounded TTLs where
+  appropriate, and define cleanup behavior for configuration changes and
+  deleted resources.
+- For time-window behavior, account for clock skew between nodes. Prefer a
+  shared authoritative clock, such as Redis server time, when the decision and
+  countdown must agree across instances.
+- Decide and document whether a shared-dependency failure should fail open or
+  fail closed. Add focused concurrency and failure-path tests for distributed
+  state rather than validating only the single-instance happy path.
+
 ## Repository map
 
 - `client/web`: browser application, routes, browser integration, and plugin host.

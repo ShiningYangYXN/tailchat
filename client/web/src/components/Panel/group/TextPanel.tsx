@@ -18,6 +18,7 @@ import {
   useGroupInfo,
   GroupPanelType,
   useHasGroupPanelPermission,
+  getGroupPanelSlowMode,
 } from 'tailchat-shared';
 import { useFriendNicknameMap } from 'tailchat-shared';
 import { MembersPanel } from './MembersPanel';
@@ -170,6 +171,7 @@ export const TextPanel: React.FC<TextPanelProps> = React.memo(
             converseTitle={panelInfo.name}
             isGroup={true}
             groupId={groupId}
+            slowMode={getGroupPanelSlowMode(panelInfo.meta)}
           />
         </ChatInputMentionsContextProvider>
       </GroupPanelContainer>

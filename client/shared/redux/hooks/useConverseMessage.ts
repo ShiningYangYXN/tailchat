@@ -25,6 +25,7 @@ import { MessageHelper } from '../../utils/message-helper';
 import { ChatConverseType } from '../../model/converse';
 import { sharedEvent } from '../../event';
 import { useUpdateRef } from '../../hooks/useUpdateRef';
+import { RequestError } from '../../api/request';
 
 const genLocalMessageId = () => _uniqueId('localMessage_');
 
@@ -64,7 +65,7 @@ function useHandleSendMessage() {
       })
     );
 
-    sendMessage(payload)
+    return sendMessage(payload)
       .then((message) => {
         dispatch(
           chatActions.deleteMessageById({
@@ -82,15 +83,37 @@ function useHandleSendMessage() {
         sharedEvent.emit('sendMessage', payload);
       })
       .catch((err) => {
-        showErrorToasts(err);
-        dispatch(
-          chatActions.updateMessageInfo({
-            messageId: localMessageId,
-            message: {
-              sendFailed: true,
-            },
-          })
-        );
+        const slowModeLimited =
+          err instanceof RequestError && err.type === 'SLOW_MODE_LIMITED';
+        if (slowModeLimited) {
+          const data = err.data as
+            | { retryAfterMs?: number; resetAt?: string }
+            | undefined;
+          sharedEvent.emit('slowModeLimited', {
+            converseId: payload.converseId,
+            retryAfterMs: data?.retryAfterMs ?? 0,
+            resetAt:
+              data?.resetAt ??
+              new Date(Date.now() + (data?.retryAfterMs ?? 0)).toISOString(),
+          });
+          dispatch(
+            chatActions.deleteMessageById({
+              converseId: payload.converseId,
+              messageId: localMessageId,
+            })
+          );
+        } else {
+          showErrorToasts(err);
+          dispatch(
+            chatActions.updateMessageInfo({
+              messageId: localMessageId,
+              message: {
+                sendFailed: true,
+              },
+            })
+          );
+        }
+        throw err;
       });
   });
 

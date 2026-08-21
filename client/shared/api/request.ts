@@ -14,7 +14,22 @@ export type CommonRequestResult<T> =
       result: true;
     } & T);
 
-class RequestError extends Error {}
+export class RequestError extends Error {
+  code?: number;
+  type?: string;
+  data?: unknown;
+
+  constructor(
+    message: string,
+    options?: { code?: number; type?: string; data?: unknown }
+  ) {
+    super(message);
+    this.name = 'RequestError';
+    this.code = options?.code;
+    this.type = options?.type;
+    this.data = options?.data;
+  }
+}
 
 export type RequestConfig = AxiosRequestConfig;
 
@@ -80,7 +95,11 @@ function createRequest() {
         // }
       }
 
-      throw new RequestError(errorMsg ?? err.message);
+      throw new RequestError(errorMsg ?? err.message, {
+        code,
+        type: responseData.type,
+        data: responseData.data,
+      });
     }
   );
 

@@ -12,11 +12,13 @@ import {
   MetaFormFieldMeta,
   metaFormFieldSchema,
 } from 'tailchat-design';
+import type { FastifyFormFieldProps } from 'tailchat-design';
 import type { GroupPanelValues } from './types';
 import _groupBy from 'lodash/groupBy';
 import _mapValues from 'lodash/mapValues';
 import { pluginGroupPanel } from '@/plugin/common';
 import { findPluginPanelInfoByName } from '@/utils/plugin-helper';
+import { SlowModeSettings } from './SlowModeSettings';
 
 const baseFields: MetaFormFieldMeta[] = [
   { type: 'text', name: 'name', label: t('面板名') },
@@ -55,9 +57,25 @@ export function useGroupPanelFields(
 ) {
   const ret = useMemo(() => {
     let fields = baseFields;
-    let schema = baseSchema;
+    let schema: Record<string, any> = baseSchema;
 
-    if (typeof currentValues.type === 'string') {
+    if (currentValues.type === GroupPanelType.TEXT) {
+      fields = [
+        ...baseFields,
+        {
+          type: 'custom',
+          name: 'slowMode',
+          label: t('慢速模式'),
+          render: (props: FastifyFormFieldProps) => (
+            <SlowModeSettings {...props} />
+          ),
+        },
+      ];
+      schema = {
+        ...baseSchema,
+        slowMode: metaFormFieldSchema.mixed(),
+      };
+    } else if (typeof currentValues.type === 'string') {
       // 如果当前选择的面板类型为插件类型
       // 需要从插件信息中获取额外的字段
       const panelInfo = findPluginPanelInfoByName(currentValues.type);

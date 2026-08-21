@@ -1,15 +1,34 @@
 import { request } from '../api/request';
 import {
   GroupPanelType,
+  getGroupPanelSlowMode,
+  isGroupPanelSlowMode,
+  GROUP_PANEL_SLOW_MODE_INTERVALS,
+  GROUP_PANEL_SLOW_MODE_MAX_MESSAGES,
+} from 'tailchat-types';
+import type {
   GroupPanel,
   GroupRole,
   GroupInfo as IGroupInfo,
   GroupBasicInfo,
   GroupInvite,
+  GroupPanelSlowMode,
 } from 'tailchat-types';
 
-export { GroupPanelType };
-export type { GroupPanel, GroupRole, GroupBasicInfo, GroupInvite };
+export {
+  GroupPanelType,
+  getGroupPanelSlowMode,
+  isGroupPanelSlowMode,
+  GROUP_PANEL_SLOW_MODE_INTERVALS,
+  GROUP_PANEL_SLOW_MODE_MAX_MESSAGES,
+};
+export type {
+  GroupPanel,
+  GroupRole,
+  GroupBasicInfo,
+  GroupInvite,
+  GroupPanelSlowMode,
+};
 
 export const groupConfigNames = [
   // 隐藏群组成员标识位

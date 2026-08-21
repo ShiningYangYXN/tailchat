@@ -39,8 +39,16 @@ export type {
   GroupStruct,
   GroupRoleStruct,
   GroupPanelStruct,
+  GroupPanelMeta,
+  GroupPanelSlowMode,
 } from './structs/group';
-export { GroupPanelType } from './structs/group';
+export {
+  GroupPanelType,
+  GROUP_PANEL_SLOW_MODE_INTERVALS,
+  GROUP_PANEL_SLOW_MODE_MAX_MESSAGES,
+  getGroupPanelSlowMode,
+  isGroupPanelSlowMode,
+} from './structs/group';
 export { userType } from './structs/user';
 export type { UserStruct, UserType, UserStructWithToken } from './structs/user';
 

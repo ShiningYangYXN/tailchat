@@ -15,17 +15,42 @@ import {
   PERMISSION,
   NotFoundError,
   SYSTEM_USERID,
+  RateLimitError,
+  getGroupPanelSlowMode,
 } from 'tailchat-server-sdk';
 import type { Group } from '../../../models/group/group';
 import { isValidStr } from '../../../lib/utils';
 import _ from 'lodash';
+import RedisSlowModeCounter, { SlowModeRedisClient } from './slowModeCounter';
 
 interface MessageService
   extends TcService,
     TcDbService<MessageDocument, MessageModel> {}
 class MessageService extends TcService {
+  private slowModeCounter?: RedisSlowModeCounter;
+
   get serviceName(): string {
     return 'chat.message';
+  }
+
+  private getSlowModeCounter(): RedisSlowModeCounter {
+    if (this.slowModeCounter) {
+      return this.slowModeCounter;
+    }
+
+    const cacher = this.broker.cacher as unknown as
+      | { client?: SlowModeRedisClient; prefix?: string }
+      | undefined;
+    const redis = cacher?.client;
+    if (!redis || typeof redis.eval !== 'function') {
+      throw new Error('Slow mode requires the Redis cacher');
+    }
+
+    const keyPrefix = cacher?.prefix
+      ? `${cacher.prefix}slow-mode:v1`
+      : undefined;
+    this.slowModeCounter = new RedisSlowModeCounter(redis, keyPrefix);
+    return this.slowModeCounter;
   }
 
   onInit(): void {
@@ -52,6 +77,20 @@ class MessageService extends TcService {
         content: 'string',
         plain: { type: 'string', optional: true },
         meta: { type: 'any', optional: true },
+      },
+    });
+    this.registerAction('getSlowModeStatus', this.getSlowModeStatus, {
+      params: {
+        converseId: 'string',
+        groupId: 'string',
+      },
+    });
+    this.registerAction('resetSlowModeCounters', this.resetSlowModeCounters, {
+      visibility: 'protected',
+      disableSocket: true,
+      params: {
+        groupId: 'string',
+        converseIds: { type: 'array', items: 'string' },
       },
     });
     this.registerAction('recallMessage', this.recallMessage, {
@@ -198,7 +237,18 @@ class MessageService extends TcService {
     /**
      * 鉴权
      */
-    await this.checkConversePermission(ctx, converseId, groupId); // 鉴权是否能获取到会话内容
+    const { bypassSlowMode } = await this.checkConversePermission(
+      ctx,
+      converseId,
+      groupId
+    ); // 鉴权是否能获取到会话内容
+    let slowModeReservation:
+      | {
+          entryId: string;
+          intervalSeconds: number;
+          maxMessages: number;
+        }
+      | undefined;
     if (isGroupMessage) {
       // 是群组消息, 鉴权是否禁言
       const groupInfo = await call(ctx).getGroupInfo(groupId);
@@ -209,16 +259,72 @@ class MessageService extends TcService {
           throw new Error(t('您因为被禁言无法发送消息'));
         }
       }
+
+      const panelInfo = groupInfo.panels.find(
+        (panel) => String(panel.id) === converseId
+      );
+      if (!panelInfo) {
+        throw new DataNotFoundError(t('没有找到会话信息'));
+      }
+
+      const slowMode = getGroupPanelSlowMode(panelInfo.meta);
+      if (slowMode && !bypassSlowMode) {
+        const result = await this.getSlowModeCounter().consume({
+          converseId,
+          userId,
+          ...slowMode,
+        });
+        if (!result.accepted) {
+          const resetAt = result.resetAt ?? new Date();
+          const retryAfterMs =
+            result.retryAfterMs ?? Math.max(resetAt.valueOf() - Date.now(), 0);
+          throw new RateLimitError(
+            t('慢速模式限制：请在 {{seconds}} 秒后重试', {
+              seconds: Math.max(Math.ceil(retryAfterMs / 1000), 1),
+            }),
+            'SLOW_MODE_LIMITED',
+            {
+              retryAfterMs,
+              resetAt: resetAt.toISOString(),
+            }
+          );
+        }
+        if (result.entryId) {
+          slowModeReservation = {
+            entryId: result.entryId,
+            ...slowMode,
+          };
+        }
+      }
     }
 
-    const message = await this.adapter.insert({
-      converseId: new Types.ObjectId(converseId),
-      groupId:
-        typeof groupId === 'string' ? new Types.ObjectId(groupId) : undefined,
-      author: new Types.ObjectId(userId),
-      content,
-      meta,
-    });
+    let message: MessageDocument;
+    try {
+      message = await this.adapter.insert({
+        converseId: new Types.ObjectId(converseId),
+        groupId:
+          typeof groupId === 'string' ? new Types.ObjectId(groupId) : undefined,
+        author: new Types.ObjectId(userId),
+        content,
+        meta,
+      });
+    } catch (err) {
+      if (slowModeReservation) {
+        await this.getSlowModeCounter()
+          .release({
+            converseId,
+            userId,
+            ...slowModeReservation,
+          })
+          .catch((releaseError) => {
+            this.logger.warn(
+              'Failed to release slow mode counter',
+              releaseError
+            );
+          });
+      }
+      throw err;
+    }
 
     const json = await this.transformDocuments(ctx, {}, message);
 
@@ -269,6 +375,81 @@ class MessageService extends TcService {
     });
 
     return json;
+  }
+
+  async getSlowModeStatus(
+    ctx: TcContext<{ converseId: string; groupId: string }>
+  ) {
+    const { converseId, groupId } = ctx.params;
+    const { t, userId } = ctx.meta;
+    const { bypassSlowMode } = await this.checkConversePermission(
+      ctx,
+      converseId,
+      groupId
+    );
+    const groupInfo = await call(ctx).getGroupInfo(groupId);
+    const panelInfo = groupInfo.panels.find(
+      (panel) => String(panel.id) === converseId
+    );
+    if (!panelInfo) {
+      throw new DataNotFoundError(t('没有找到会话信息'));
+    }
+
+    const slowMode = getGroupPanelSlowMode(panelInfo.meta);
+
+    if (!slowMode) {
+      return { enabled: false };
+    }
+
+    if (bypassSlowMode) {
+      return {
+        enabled: true,
+        bypassed: true,
+        ...slowMode,
+        remaining: slowMode.maxMessages,
+      };
+    }
+
+    const status = await this.getSlowModeCounter().getStatus({
+      converseId,
+      userId,
+      ...slowMode,
+    });
+
+    return {
+      enabled: true,
+      bypassed: false,
+      ...slowMode,
+      remaining: status.remaining,
+      resetAt: status.resetAt?.toISOString(),
+    };
+  }
+
+  async resetSlowModeCounters(
+    ctx: TcContext<{ groupId: string; converseIds: string[] }>
+  ) {
+    const { groupId, converseIds } = ctx.params;
+    const { t, userId } = ctx.meta;
+    const [hasPermission] = await call(ctx).checkUserPermissions(
+      groupId,
+      userId,
+      [PERMISSION.core.managePanel]
+    );
+    if (!hasPermission) {
+      throw new NoPermissionError(t('没有操作权限'));
+    }
+
+    const groupInfo = await call(ctx).getGroupInfo(groupId);
+    const panelIds = new Set(groupInfo.panels.map((panel) => String(panel.id)));
+    if (converseIds.some((converseId) => !panelIds.has(converseId))) {
+      throw new DataNotFoundError(t('没有找到会话信息'));
+    }
+
+    const deletedCount = await this.getSlowModeCounter().deleteByConverseIds(
+      converseIds
+    );
+
+    return { deletedCount };
   }
 
   /**
@@ -578,17 +759,17 @@ class MessageService extends TcService {
     ctx: TcContext,
     converseId: string,
     groupId?: string
-  ) {
+  ): Promise<{ bypassSlowMode: boolean }> {
     const userId = ctx.meta.userId;
     const t = ctx.meta.t;
     if (userId === SYSTEM_USERID) {
-      return;
+      return { bypassSlowMode: true };
     }
 
     const userInfo = await call(ctx).getUserInfo(userId); // TODO: 可以通过在默认的meta信息中追加用户类型来减少一次请求来优化
     if (userInfo.type === 'pluginBot') {
-      // 如果是插件机器人则拥有所有权限(开放平台机器人需要添加到群组才有会话权限)
-      return;
+      // 插件机器人可以不加入群组直接发送插件消息，但仍受频道慢速模式限制
+      return { bypassSlowMode: false };
     }
 
     // 鉴权是否能获取到会话内容
@@ -618,6 +799,8 @@ class MessageService extends TcService {
         throw new NoPermissionError(t('没有当前会话权限'));
       }
     }
+
+    return { bypassSlowMode: false };
   }
 }
 

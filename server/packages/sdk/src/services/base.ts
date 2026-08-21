@@ -201,8 +201,12 @@ export abstract class TcService extends Service {
    * 获取服务操作列表
    */
   getActionList() {
-    return Object.entries(this._actions).map(
-      ([name, schema]: [string, ServiceActionSchema]) => {
+    return Object.entries(this._actions)
+      .filter(
+        ([, schema]: [string, ServiceActionSchema]) =>
+          schema.visibility == null || schema.visibility === 'published'
+      )
+      .map(([name, schema]: [string, ServiceActionSchema]) => {
         return {
           name,
           params: _.mapValues(schema.params, (type) => {
@@ -213,8 +217,7 @@ export abstract class TcService extends Service {
             }
           }),
         };
-      }
-    );
+      });
   }
 
   registerMixin(mixin: Partial<ServiceSchema>): void {

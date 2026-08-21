@@ -812,6 +812,27 @@
         }
       }
     },
+    "/chat.message/getSlowModeStatus": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "converseId": {
+                    "type": "string"
+                  },
+                  "groupId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/chat.message/recallMessage": {
       "post": {
         "requestBody": {

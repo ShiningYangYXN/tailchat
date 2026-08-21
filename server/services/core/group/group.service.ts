@@ -23,6 +23,8 @@ import {
   config,
   SYSTEM_USERID,
   db,
+  getGroupPanelSlowMode,
+  isGroupPanelSlowMode,
 } from 'tailchat-server-sdk';
 import moment from 'moment';
 
@@ -231,6 +233,21 @@ class GroupService extends TcService {
     });
   }
 
+  private validateSlowMode(
+    type: number,
+    meta: object | undefined,
+    t: TcContext['meta']['t']
+  ) {
+    const slowMode = (meta as { slowMode?: unknown } | undefined)?.slowMode;
+    if (slowMode === undefined) {
+      return;
+    }
+
+    if (type !== GroupPanelType.TEXT || !isGroupPanelSlowMode(slowMode)) {
+      throw new EntityError(t('慢速模式设置无效'));
+    }
+  }
+
   /**
    * 获取会被订阅的群组面板id列表
    *
@@ -294,6 +311,8 @@ class GroupService extends TcService {
     const panels = ctx.params.panels;
     const userId = ctx.meta.userId;
     const t = ctx.meta.t;
+
+    panels.forEach((panel) => this.validateSlowMode(panel.type, panel.meta, t));
 
     if (
       config.feature.disableCreateGroup === true &&
@@ -772,6 +791,8 @@ class GroupService extends TcService {
       throw new NoPermissionError(t('没有操作权限'));
     }
 
+    this.validateSlowMode(type, meta, t);
+
     const panelId = String(new Types.ObjectId());
 
     const group = await this.adapter.model
@@ -853,6 +874,28 @@ class GroupService extends TcService {
       throw new NoPermissionError(t('没有操作权限'));
     }
 
+    this.validateSlowMode(type, meta, t);
+
+    const previousGroup = await this.adapter.model
+      .findOne(
+        {
+          _id: new Types.ObjectId(groupId),
+          'panels.id': panelId,
+        },
+        {
+          panels: 1,
+        }
+      )
+      .lean()
+      .exec();
+    const previousPanel = previousGroup?.panels.find(
+      (panel) => String(panel.id) === panelId
+    );
+    const slowModeChanged = !_.isEqual(
+      getGroupPanelSlowMode(previousPanel?.meta),
+      getGroupPanelSlowMode(meta)
+    );
+
     const res = await this.adapter.model
       .updateOne(
         {
@@ -878,6 +921,13 @@ class GroupService extends TcService {
 
     if (res.modifiedCount === 0) {
       throw new Error(t('没有找到该面板'));
+    }
+
+    if (slowModeChanged) {
+      await ctx.call('chat.message.resetSlowModeCounters', {
+        groupId,
+        converseIds: [panelId],
+      });
     }
 
     const group = await this.adapter.model.findById(String(groupId));

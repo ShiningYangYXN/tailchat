@@ -3,6 +3,7 @@ import MessageService from '../../../services/core/chat/message.service';
 import type { MessageDocument } from '../../../models/chat/message';
 import { Types } from 'mongoose';
 import _ from 'lodash';
+import { SYSTEM_USERID } from 'tailchat-server-sdk';
 
 function createTestMessage(converseId: Types.ObjectId, content = 'bar') {
   return {
@@ -17,6 +18,47 @@ function createTestMessage(converseId: Types.ObjectId, content = 'bar') {
 describe('Test "chat.message" service', () => {
   const { broker, service, insertTestData } =
     createTestServiceBroker<MessageService>(MessageService);
+
+  describe('Test slow mode bypass policy', () => {
+    test('plugin bots keep converse access but do not bypass slow mode', async () => {
+      const userId = String(new Types.ObjectId());
+      const ctx = {
+        meta: {
+          userId,
+          t: (key: string) => key,
+        },
+        call: jest.fn().mockResolvedValue({ type: 'pluginBot' }),
+      };
+
+      const result = await (service as any).checkConversePermission(
+        ctx,
+        String(new Types.ObjectId()),
+        String(new Types.ObjectId())
+      );
+
+      expect(result).toEqual({ bypassSlowMode: false });
+      expect(ctx.call).toHaveBeenCalledWith('user.getUserInfo', { userId });
+    });
+
+    test('system messages still bypass slow mode', async () => {
+      const ctx = {
+        meta: {
+          userId: SYSTEM_USERID,
+          t: (key: string) => key,
+        },
+        call: jest.fn(),
+      };
+
+      const result = await (service as any).checkConversePermission(
+        ctx,
+        String(new Types.ObjectId()),
+        String(new Types.ObjectId())
+      );
+
+      expect(result).toEqual({ bypassSlowMode: true });
+      expect(ctx.call).not.toHaveBeenCalled();
+    });
+  });
 
   describe('Test "chat.message.fetchConverseMessage"', () => {
     test('single message', async () => {

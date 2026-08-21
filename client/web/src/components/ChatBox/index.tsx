@@ -5,6 +5,7 @@ import {
   ConverseMessageProvider,
   useConverseMessageContext,
 } from 'tailchat-shared';
+import type { GroupPanelSlowMode } from 'tailchat-shared';
 import { ErrorView } from '../ErrorView';
 import { ChatBoxPlaceholder } from './ChatBoxPlaceholder';
 import { ChatInputBox } from './ChatInputBox';
@@ -24,6 +25,7 @@ type ChatBoxProps =
       converseTitle?: React.ReactNode;
       isGroup: true;
       groupId: string;
+      slowMode?: GroupPanelSlowMode;
     };
 const ChatBoxInner: React.FC<ChatBoxProps> = React.memo((props) => {
   const { converseId, converseTitle } = props;
@@ -59,6 +61,9 @@ const ChatBoxInner: React.FC<ChatBoxProps> = React.memo((props) => {
       <ChatReply />
 
       <ChatInputBox
+        converseId={props.converseId}
+        groupId={props.groupId}
+        slowMode={props.isGroup ? props.slowMode : undefined}
         onSendMsg={async (msg, meta) => {
           const content = preprocessMessage(msg);
           await sendMessage({

@@ -1,6 +1,7 @@
 import { findPluginPanelInfoByName } from '@/utils/plugin-helper';
 import { GroupPanel, GroupPanelType } from 'tailchat-shared';
 import type { GroupPanelValues } from './types';
+import _omit from 'lodash/omit';
 
 /**
  * 根据表单数据生成需要提交的内容
@@ -29,7 +30,7 @@ export function buildDataFromValues(values: GroupPanelValues) {
     type: panelType,
     provider,
     pluginPanelName,
-    meta,
+    meta: panelType === GroupPanelType.TEXT ? meta : _omit(meta, ['slowMode']),
     permissionMap,
     fallbackPermissions,
   };

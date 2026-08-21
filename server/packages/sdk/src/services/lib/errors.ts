@@ -55,6 +55,12 @@ export class ServiceUnavailableError extends TcError {
   }
 }
 
+export class RateLimitError extends TcError {
+  constructor(message?: string, type?: string, data?: unknown) {
+    super(message ?? 'Too many requests', 429, type ?? 'RATE_LIMITED', data);
+  }
+}
+
 export class NotFoundError extends TcError {
   constructor(data?: unknown) {
     super('Not found', 404, 'NOT_FOUND', data);

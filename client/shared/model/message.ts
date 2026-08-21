@@ -40,6 +40,17 @@ export interface SendMessagePayload extends SimpleMessagePayload {
   meta?: SendMessagePayloadMeta;
 }
 
+export type SlowModeStatus =
+  | { enabled: false }
+  | {
+      enabled: true;
+      bypassed: boolean;
+      intervalSeconds: number;
+      maxMessages: number;
+      remaining: number;
+      resetAt?: string;
+    };
+
 /**
  * 获取会话消息
  * @param converseId 会话ID
@@ -67,6 +78,18 @@ export async function sendMessage(
   payload: SendMessagePayload
 ): Promise<ChatMessage> {
   const { data } = await request.post('/api/chat/message/sendMessage', payload);
+
+  return data;
+}
+
+export async function getSlowModeStatus(
+  groupId: string,
+  converseId: string
+): Promise<SlowModeStatus> {
+  const { data } = await request.post('/api/chat/message/getSlowModeStatus', {
+    groupId,
+    converseId,
+  });
 
   return data;
 }

@@ -33,6 +33,34 @@ describe('buildDataFromValues', () => {
       },
     ],
     [
+      {
+        name: 'name',
+        type: 0,
+        slowMode: { intervalSeconds: 60, maxMessages: 5 },
+      },
+      {
+        name: 'name',
+        type: 0,
+        pluginPanelName: undefined,
+        provider: undefined,
+        meta: { slowMode: { intervalSeconds: 60, maxMessages: 5 } },
+      },
+    ],
+    [
+      {
+        name: 'name',
+        type: 1,
+        slowMode: { intervalSeconds: 60, maxMessages: 5 },
+      },
+      {
+        name: 'name',
+        type: 1,
+        pluginPanelName: undefined,
+        provider: undefined,
+        meta: {},
+      },
+    ],
+    [
       { name: 'name', type: 'fooPluginPanel' },
       {
         name: 'name',
