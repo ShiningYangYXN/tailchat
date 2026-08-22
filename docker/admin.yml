@@ -4,7 +4,7 @@ services:
   # 后台应用
   tailchat-admin:
     build:
-      context: ../
+      context: .
     image: tailchat
     restart: unless-stopped
     env_file: docker-compose.env
@@ -14,7 +14,26 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.admin.rule=PathPrefix(`/admin`)"
+      - "traefik.http.routers.admin.priority=50"
       - "traefik.http.services.admin.loadbalancer.server.port=3000"
     networks:
       - internal
     command: pnpm start:admin
+
+  tailchat-admin-next:
+    build:
+      context: .
+    image: tailchat
+    restart: unless-stopped
+    env_file: docker-compose.env
+    depends_on:
+      - mongo
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin-next.rule=PathPrefix(`/admin-next`)"
+      - "traefik.http.routers.admin-next.priority=100"
+      - "traefik.http.services.admin-next.loadbalancer.server.port=3100"
+    networks:
+      - internal
+    command: pnpm start:admin-next

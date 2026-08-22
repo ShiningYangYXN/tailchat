@@ -1702,6 +1702,100 @@ importers:
         specifier: ^4.2.0
         version: 4.2.0(@types/node@18.11.9)
 
+  server/admin-next:
+    dependencies:
+      '@arco-design/web-react':
+        specifier: 2.51.0
+        version: 2.51.0(@types/react@18.0.20)(react-dom@18.2.0)(react@18.2.0)
+      '@bytemd/plugin-gfm':
+        specifier: ^1.21.0
+        version: 1.21.0(bytemd@1.21.0)
+      '@bytemd/react':
+        specifier: ^1.21.0
+        version: 1.21.0(react@18.2.0)
+      '@fastify/busboy':
+        specifier: ^1.1.0
+        version: 1.1.0
+      bytemd:
+        specifier: ^1.21.0
+        version: 1.21.0
+      compression:
+        specifier: ^1.7.4
+        version: 1.7.4
+      dayjs:
+        specifier: ^1.11.7
+        version: 1.11.7
+      express:
+        specifier: ^4.18.2
+        version: 4.18.2
+      filesize:
+        specifier: ^8.0.7
+        version: 8.0.7
+      jsonwebtoken:
+        specifier: ^8.5.1
+        version: 8.5.1
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      md5:
+        specifier: ^2.3.0
+        version: 2.3.0
+      morgan:
+        specifier: ^1.10.0
+        version: 1.10.0
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      recharts:
+        specifier: 2.7.2
+        version: 2.7.2(prop-types@15.8.1)(react-dom@18.2.0)(react@18.2.0)
+      tailchat-server-sdk:
+        specifier: workspace:^
+        version: link:../packages/sdk
+      vite-express:
+        specifier: 0.8.0
+        version: 0.8.0(patch_hash=u6touqej4dt3zxnslnszarl7vq)(express@4.18.2)(vite@4.2.0)
+    devDependencies:
+      '@types/compression':
+        specifier: ^1.7.2
+        version: 1.7.2
+      '@types/express':
+        specifier: ^4.17.15
+        version: 4.17.17
+      '@types/md5':
+        specifier: ^2.3.2
+        version: 2.3.2
+      '@types/morgan':
+        specifier: ^1.9.4
+        version: 1.9.4
+      '@types/react':
+        specifier: 18.0.20
+        version: 18.0.20
+      '@types/react-dom':
+        specifier: ^18.0.11
+        version: 18.0.11
+      '@vitejs/plugin-react':
+        specifier: ^3.1.0
+        version: 3.1.0(vite@4.2.0)
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
+      nodemon:
+        specifier: ^2.0.22
+        version: 2.0.22
+      ts-node:
+        specifier: 10.9.1
+        version: 10.9.1(@types/node@18.11.9)(typescript@4.9.4)
+      typescript:
+        specifier: 4.9.4
+        version: 4.9.4
+      vite:
+        specifier: ^4.2.0
+        version: 4.2.0(@types/node@18.11.9)
+
   server/packages/openapi-generator:
     dependencies:
       '@apidevtools/swagger-parser':
